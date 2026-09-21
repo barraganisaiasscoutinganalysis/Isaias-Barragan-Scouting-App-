@@ -1,0 +1,315 @@
+@import "tailwindcss";
+
+html {
+  font-size: 100% !important;
+}
+
+@media (min-width: 1024px) {
+  html {
+    font-size: 130% !important;
+  }
+}
+
+:root {
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Default theme values (overridden dynamically by ThemeContext JS) */
+  --theme-primary: #F9C34D;
+  --theme-primary-text: #000000;
+  --theme-secondary: #F59E0B;
+  --theme-bg-main: #0A0D14;
+  --theme-bg-card: #111827;
+  --theme-bg-header: #0B0F19;
+  --theme-border-card: #334155;
+  --theme-text-primary: #FFFFFF;
+  --theme-text-muted: #94A3B8;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--theme-bg-main) !important;
+    color: var(--theme-text-primary) !important;
+    overflow-x: hidden;
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  /* Boost tiny hardcoded text classes globally on desktop */
+  @media (min-width: 1024px) {
+    .text-\[10px\], .text-\[11px\] {
+      font-size: 12px !important;
+    }
+    .text-xs {
+      font-size: 0.85rem !important;
+    }
+    .text-sm {
+      font-size: 0.95rem !important;
+    }
+    .text-base {
+      font-size: 1.05rem !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   DYNAMIC GLOBAL THEME OVERRIDES FOR THE ENTIRE APPLICATION
+   ========================================================================== */
+
+/* Main Backgrounds Across All Pages, Views and Modals */
+body, 
+#root,
+main,
+.tactical-grid-bg,
+[class*="bg-[#0A0D14]"],
+[class*="bg-[#0a0d14]"] {
+  background-color: var(--theme-bg-main) !important;
+}
+
+/* Sidebar Navigation and Headers */
+aside,
+header {
+  background-color: var(--theme-bg-header) !important;
+}
+
+/* Card & Surface Containers Across All Components */
+.bg-card-surface,
+.rounded-xl.bg-\[\#111827\],
+.rounded-lg.bg-\[\#111827\],
+.rounded-2xl.bg-\[\#111827\],
+[class*="bg-[#111827]"],
+[class*="bg-[#1E293B]"],
+[class*="bg-[#0F172A]"],
+[class*="bg-[#1e293b]"],
+[class*="bg-[#0f172a]"] {
+  background-color: var(--theme-bg-card) !important;
+}
+
+/* Card Borders & Structural Dividers */
+aside,
+header,
+div,
+section,
+[class*="border-[#334155]"],
+[class*="border-[#1E293B]"] {
+  border-color: var(--theme-border-card);
+}
+
+/* Primary Accent Buttons & Highlights */
+.bg-amber-500,
+.bg-amber-600,
+.bg-blue-600,
+.bg-cyan-600 {
+  background-color: var(--theme-primary) !important;
+  color: var(--theme-primary-text) !important;
+}
+
+.text-amber-400,
+.text-amber-500,
+.text-blue-400,
+.text-cyan-400 {
+  color: var(--theme-primary) !important;
+}
+
+.border-amber-400,
+.border-amber-500,
+.border-blue-500 {
+  border-color: var(--theme-primary) !important;
+}
+
+/* Secondary Accent Colors */
+.text-amber-300,
+.text-yellow-400,
+.text-cyan-300 {
+  color: var(--theme-secondary) !important;
+}
+
+/* Text Colors Across the Entire Application */
+.text-\[\#94A3B8\],
+.text-\[\#64748B\],
+.text-slate-400 {
+  color: var(--theme-text-muted) !important;
+}
+
+.text-\[\#E5E7EB\],
+.text-\[\#F8FAFC\] {
+  color: var(--theme-text-primary) !important;
+}
+
+/* Tactical Pitch background overlay blend */
+.pitch-pattern {
+  background: 
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.015) 0px,
+      rgba(255, 255, 255, 0.015) 10%,
+      transparent 10%,
+      transparent 20%
+    );
+}
+
+/* Custom smooth scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--theme-bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--theme-border-card);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-primary);
+}
+
+/* Print Stylesheet for PDF & Native Window Printing */
+@media print {
+  /* Hide standard interface elements to prevent leakage */
+  #root > div:not(.fixed), 
+  aside, 
+  header, 
+  main,
+  button,
+  .mobile-header-bar {
+    display: none !important;
+  }
+
+  /* Force #root and absolute parents to unconstrain layout flow */
+  html {
+    font-size: 85% !important;
+  }
+
+  html, body, #root {
+    background-color: #0B0F19 !important;
+    color: #E2E8F0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  /* Make only the print modal visible and allow it to take standard document layout */
+  .fixed.inset-0.z-50:has(#scouting-dossier-print-container) {
+    visibility: visible !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #0B0F19 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .fixed.inset-0.z-50:has(#scouting-dossier-print-container) * {
+    visibility: visible !important;
+  }
+
+  /* Override the modal card element */
+  .fixed.inset-0.z-50:has(#scouting-dossier-print-container) > div {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #0B0F19 !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  /* Hide the modal toolbar in the printout */
+  .fixed.inset-0.z-50:has(#scouting-dossier-print-container) > div > div.flex.items-center.justify-between {
+    display: none !important;
+  }
+
+  /* Re-style our print container to fill standard pages cleanly */
+  #scouting-dossier-print-container {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 15mm !important;
+    margin: 0 !important;
+    background-color: #0B0F19 !important;
+    color: #E2E8F0 !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Prevent awkward page breaks inside cards */
+  #scouting-dossier-print-container > div,
+  #scouting-dossier-print-container .rounded-xl,
+  #scouting-dossier-print-container .bg-[#111827] {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 6mm !important;
+  }
+
+  /* Force horizontal layouts for match scoreboard & player header rows on printed pages */
+  #scouting-dossier-print-container .flex-col.sm\:flex-row {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    gap: 12px !important;
+  }
+
+  /* Adjust score display width to avoid truncation */
+  #scouting-dossier-print-container .flex-col.sm\:flex-row > div:first-child {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 16px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  /* Adjust font-size of team names in printed document to prevent overlap and wrapping */
+  #scouting-dossier-print-container h3 {
+    font-size: 1.1rem !important;
+    white-space: nowrap !important;
+  }
+
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+}
+

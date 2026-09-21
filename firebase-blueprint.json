@@ -1,0 +1,97 @@
+{
+  "entities": {
+    "Report": {
+      "title": "Match Report",
+      "description": "Scouting report for a football match",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "matchId": { "type": "string" },
+        "homeTeam": { "type": "string" },
+        "awayTeam": { "type": "string" },
+        "homeScore": { "type": "number" },
+        "awayScore": { "type": "number" },
+        "competition": { "type": "string" },
+        "season": { "type": "string" },
+        "matchDate": { "type": "string" },
+        "stadium": { "type": "string" },
+        "status": { "type": "string" },
+        "generalNotes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "matchId", "homeTeam", "awayTeam", "updatedAt"]
+    },
+    "Evaluation": {
+      "title": "Player Scout Evaluation",
+      "description": "Scout observation, rating and tags for a player in a specific match report",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "reportId": { "type": "string" },
+        "playerId": { "type": "string" },
+        "matchId": { "type": "string" },
+        "userId": { "type": "string" },
+        "rating": { "type": "number" },
+        "ratingType": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+        "comment": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["reportId", "playerId", "matchId", "userId", "updatedAt"]
+    },
+    "EventNote": {
+      "title": "Match Event Note",
+      "description": "Scout note for a specific timeline event",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "reportId": { "type": "string" },
+        "eventId": { "type": "string" },
+        "userId": { "type": "string" },
+        "note": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["reportId", "eventId", "userId", "updatedAt"]
+    },
+    "PlayerReport": {
+      "title": "Player General Scouting Dossier",
+      "description": "Global scout assessment, projection and notes for a player across all matches",
+      "type": "object",
+      "properties": {
+        "playerId": { "type": "string" },
+        "playerName": { "type": "string" },
+        "teamName": { "type": "string" },
+        "positionLabel": { "type": "string" },
+        "overallRating": { "type": "number" },
+        "recommendation": { "type": "string", "enum": ["SIGN", "MONITOR", "FUTURE", "DISCARD"] },
+        "projectedRole": { "type": "string" },
+        "strengths": { "type": "string" },
+        "weaknesses": { "type": "string" },
+        "summaryNotes": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["playerId", "playerName", "updatedAt", "userId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/reports/{reportId}": {
+      "schema": "Report",
+      "description": "User match scouting reports"
+    },
+    "/users/{userId}/evaluations/{evaluationId}": {
+      "schema": "Evaluation",
+      "description": "Scout player evaluations scoped to match report"
+    },
+    "/users/{userId}/eventNotes/{noteId}": {
+      "schema": "EventNote",
+      "description": "Scout timeline event annotations"
+    },
+    "/users/{userId}/playerReports/{playerId}": {
+      "schema": "PlayerReport",
+      "description": "User player dossiers and general scouting reports"
+    }
+  }
+}

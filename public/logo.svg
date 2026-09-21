@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" width="100%" height="100%">
+  <defs>
+    <style>
+      .gold-fill { fill: #F5B800; }
+      .gold-stroke { stroke: #F5B800; fill: none; }
+      .bg-black { fill: #05070B; }
+    </style>
+  </defs>
+
+  <!-- Outer Slanted Container Badge -->
+  <g transform="skewX(-14)">
+    <!-- Outer thick gold border -->
+    <rect x="70" y="20" width="880" height="360" rx="45" ry="45" fill="none" stroke="#F5B800" stroke-width="12" />
+    <!-- Inner gold frame border -->
+    <rect x="85" y="35" width="850" height="330" rx="35" ry="35" fill="#05070B" stroke="#F5B800" stroke-width="6" />
+
+    <!-- TOP SECTION: Monogram IB + Tactical Pitch -->
+    <!-- I Letter -->
+    <path d="M 120 70 L 260 70 L 195 265 L 125 265 Z" class="gold-fill" />
+
+    <!-- B Letter & Flow into Tactical Pitch -->
+    <path d="M 235 70 
+             L 530 70 
+             C 570 70 595 85 585 115 
+             C 575 140 550 155 515 160 
+             C 565 165 590 185 580 220 
+             C 568 260 525 265 460 265 
+             L 180 265 
+             L 205 180 
+             L 320 180 
+             C 360 180 380 172 385 158 
+             C 390 144 378 138 340 138 
+             L 218 138 Z" class="gold-fill" />
+             
+    <!-- Inner cutouts for B -->
+    <!-- Top B hole -->
+    <path d="M 325 95 L 450 95 C 480 95 495 102 490 118 C 485 132 468 138 440 138 L 312 138 Z" fill="#05070B" />
+    <!-- Bottom B hole -->
+    <path d="M 305 158 L 440 158 C 475 158 495 168 488 195 C 480 225 450 240 400 240 L 280 240 Z" fill="#05070B" />
+
+    <!-- Tactical Pitch Outline on Right -->
+    <g class="gold-stroke" stroke-width="4">
+      <!-- Pitch boundary -->
+      <rect x="560" y="80" width="340" height="175" rx="12" />
+      <!-- Halfway line -->
+      <line x1="730" y1="80" x2="730" y2="255" />
+      <!-- Center Circle -->
+      <circle cx="730" cy="167" r="32" />
+      <circle cx="730" cy="167" r="3" class="gold-fill" />
+
+      <!-- Left Penalty Box -->
+      <path d="M 560 115 L 615 115 L 615 220 L 560 220" />
+      <path d="M 560 138 L 585 138 L 585 197 L 560 197" />
+
+      <!-- Right Penalty Box -->
+      <path d="M 900 115 L 845 115 L 845 220 L 900 220" />
+      <path d="M 900 138 L 875 138 L 875 197 L 900 197" />
+
+      <!-- Tactical Play Icons (X, O, Arrow) -->
+      <!-- X marks -->
+      <g stroke-width="3">
+        <line x1="660" y1="210" x2="674" y2="224" />
+        <line x1="674" y1="210" x2="660" y2="224" />
+
+        <line x1="755" y1="210" x2="769" y2="224" />
+        <line x1="769" y1="210" x2="755" y2="224" />
+
+        <line x1="805" y1="105" x2="819" y2="119" />
+        <line x1="819" y1="105" x2="805" y2="119" />
+      </g>
+
+      <!-- O marks -->
+      <circle cx="785" cy="140" r="7" stroke-width="3" />
+      <circle cx="820" cy="200" r="7" stroke-width="3" />
+
+      <!-- Dashed Arrow Path -->
+      <path d="M 788 150 Q 820 160 855 130" stroke-dasharray="5,5" stroke-width="3" />
+      <!-- Arrow head -->
+      <polygon points="858,125 862,136 850,133" class="gold-fill" />
+    </g>
+
+    <!-- TEXT ROW 1: ISAIAS BARRAGAN -->
+    <text x="115" y="312" class="gold-fill" font-family="'Plus Jakarta Sans', 'Arial Black', sans-serif" font-weight="900" font-size="38" letter-spacing="3.5">ISAIAS BARRAGAN</text>
+
+    <!-- TEXT ROW 2: SCOUTING AND VIDEO ANALYSIS -->
+    <text x="115" y="348" class="gold-fill" font-family="'Plus Jakarta Sans', 'Arial Black', sans-serif" font-weight="800" font-size="20" letter-spacing="7">SCOUTING AND VIDEO ANALYSIS</text>
+  </g>
+</svg>

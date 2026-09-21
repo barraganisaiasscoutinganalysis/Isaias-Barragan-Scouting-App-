@@ -1,0 +1,6 @@
+{
+  "name": "Isaias Barragan - Scouting & Video Analysis",
+  "description": "Plataforma profesional de scouting y análisis táctico de fútbol con integración oficial de Sofascore, informes ejecutivos en PDF y motor de datos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
