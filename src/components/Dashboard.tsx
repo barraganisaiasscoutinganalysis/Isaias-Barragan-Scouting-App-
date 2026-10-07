@@ -23,12 +23,8 @@ import {
   X,
   FileImage,
   FileText,
-  RefreshCw,
-  Database,
-  LogIn,
-  Cloud
+  RefreshCw
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 import { MatchReportMeta } from '../types/scouting';
 import { parseFootballUrl } from '../services/sofascore/urlParser';
 import { cleanCompetitionName } from '../utils/countryFlags';
@@ -42,7 +38,6 @@ interface DashboardProps {
   onDeleteReport: (reportId: string) => void;
   onNavigateToImageAnalysis?: () => void;
   onRefresh?: () => Promise<void> | void;
-  onOpenRecoveryModal?: () => void;
   isLoading: boolean;
 }
 
@@ -55,10 +50,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onDeleteReport,
   onNavigateToImageAnalysis,
   onRefresh,
-  onOpenRecoveryModal,
   isLoading,
 }) => {
-  const { user, signInWithGoogle } = useAuth();
   const [activeTab, setActiveTab] = useState<'url' | 'bookmarklet' | 'json'>('url');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [urlInput, setUrlInput] = useState('');
@@ -513,50 +506,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Reports Section */}
       <section className="space-y-4">
-        {/* User Account / Cloud Persistence Banner */}
-        {user ? (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-lg bg-emerald-950/20 border border-emerald-500/30 text-xs">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
-                <span className="text-emerald-300 font-semibold font-mono text-[11px] uppercase tracking-wider">
-                  Nube Firebase Activa:
-                </span>
-                <span className="text-white font-medium truncate font-mono text-xs">
-                  {user.email}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 text-emerald-400 font-mono text-[11px] shrink-0">
-              <Cloud className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Sincronizado con tu cuenta</span>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-lg bg-amber-950/20 border border-amber-500/30 text-xs">
-            <div className="flex items-start sm:items-center gap-2.5 min-w-0">
-              <div className="p-1.5 rounded-md bg-amber-500/10 text-amber-400 shrink-0 mt-0.5 sm:mt-0">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-              <div className="space-y-0.5">
-                <p className="text-amber-300 font-semibold font-mono text-xs uppercase tracking-wider">
-                  Modo Invitado (Sin Cuenta de Google)
-                </p>
-                <p className="text-[#94A3B8] text-[11px] leading-relaxed">
-                  Estás trabajando localmente. Inicia sesión con tu cuenta de Google para guardar tus informes permanentemente en la nube y acceder desde cualquier dispositivo.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => signInWithGoogle()}
-              className="px-3.5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black text-xs font-bold font-mono uppercase tracking-wider flex items-center justify-center gap-2 shrink-0 cursor-pointer shadow-md shadow-amber-500/10 transition-all"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>Iniciar Sesión con Google</span>
-            </button>
-          </div>
-        )}
-
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1E293B] pb-4">
           <div>
             <div className="flex items-center gap-3">
@@ -579,21 +528,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   }}
                   disabled={isRefreshing}
                   className="px-2.5 py-1 rounded bg-[#1E293B] hover:bg-[#334155] border border-[#334155] text-[11px] font-mono text-[#94A3B8] hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
-                  title="Sincronizar y recuperar partidos de la nube y almacenamiento local"
+                  title="Actualizar lista de partidos guardados"
                 >
                   <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin text-blue-400' : ''}`} />
-                  <span>{isRefreshing ? 'Sincronizando...' : 'Sincronizar'}</span>
-                </button>
-              )}
-              {onOpenRecoveryModal && (
-                <button
-                  type="button"
-                  onClick={onOpenRecoveryModal}
-                  className="px-2.5 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-[11px] font-mono text-amber-300 hover:text-amber-200 flex items-center gap-1.5 transition-colors cursor-pointer"
-                  title="Escanear y recuperar partidos y notas perdidas de Cienciano, Torque, Racing, etc."
-                >
-                  <Database className="w-3 h-3 text-amber-400" />
-                  <span>Recuperar Datos</span>
+                  <span>{isRefreshing ? 'Actualizando...' : 'Actualizar'}</span>
                 </button>
               )}
             </div>

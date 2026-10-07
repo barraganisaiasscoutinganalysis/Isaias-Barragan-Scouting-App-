@@ -7,9 +7,8 @@ import { MatchReport } from './components/MatchReport';
 import { PlayersView } from './components/PlayersView';
 import { SettingsView } from './components/SettingsView';
 import { ImageLineupAnalyzerView } from './components/ImageLineupAnalyzerView';
-import { DataRecoveryModal } from './components/DataRecoveryModal';
-import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ColorEditorModal } from './components/ColorEditorModal';
 import { sofascoreService } from './services/sofascore/sofascoreService';
 import { storageService } from './services/storage/storageService';
@@ -25,8 +24,8 @@ import {
 type ViewMode = 'dashboard' | 'report' | 'players' | 'settings' | 'image-analysis';
 
 function ScoutingApp() {
-  const { user } = useAuth();
   const { theme } = useTheme();
+  const { user } = useAuth();
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
   const [reports, setReports] = useState<MatchReportMeta[]>([]);
   const [allLoadedReports, setAllLoadedReports] = useState<CompleteMatchReport[]>([]);
@@ -47,11 +46,15 @@ function ScoutingApp() {
   const [settingsPinInput, setSettingsPinInput] = useState('');
   const [settingsPinError, setSettingsPinError] = useState(false);
 
-  // Data Recovery Modal state
-  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
-
-  // Initial load and cloud sync of saved reports
+  // Initial load and sync of saved reports
   const loadReportsList = async () => {
+    if (!user) {
+      setReports([]);
+      setAllLoadedReports([]);
+      setActiveReport(null);
+      return;
+    }
+
     try {
       if (storageService.syncAll) {
         await storageService.syncAll();
@@ -72,16 +75,14 @@ function ScoutingApp() {
   };
 
   useEffect(() => {
-    // Reset view and in-memory list when auth context changes
+    // Reset state before loading for new auth identity
     setReports([]);
     setAllLoadedReports([]);
     setActiveReport(null);
-    if (currentView === 'report') {
-      setCurrentView('dashboard');
-    }
     loadReportsList();
+  }, [user]);
 
-    // 1. Check URL hash or query parameters for direct 1-click imports from Sofascore Bookmarklet
+  useEffect(() => {
     const checkHashImport = async () => {
       try {
         const hash = window.location.hash;
@@ -138,7 +139,7 @@ function ScoutingApp() {
       window.removeEventListener('hashchange', checkHashImport);
       window.removeEventListener('message', handleMessage);
     };
-  }, [user]);
+  }, []);
 
   // Handle URL analysis flow
   const handleAnalyzeUrl = async (url: string) => {
@@ -188,8 +189,7 @@ function ScoutingApp() {
           generalNotes: '',
           evaluationCount: 0,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          userId: user?.uid
+          updatedAt: new Date().toISOString()
         };
 
         completeReport = {
@@ -262,8 +262,7 @@ function ScoutingApp() {
           generalNotes: '',
           evaluationCount: 0,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          userId: user?.uid
+          updatedAt: new Date().toISOString()
         };
 
         completeReport = {
@@ -380,7 +379,6 @@ function ScoutingApp() {
       reportId: activeReport.meta.id,
       matchId: activeReport.match.id,
       playerId,
-      userId: user?.uid,
       rating,
       ratingLevel: level,
       comment: comment ?? (activeReport.evaluations[playerId]?.comment || ''),
@@ -416,7 +414,6 @@ function ScoutingApp() {
     const eventNote = {
       reportId: activeReport.meta.id,
       eventId,
-      userId: user?.uid,
       note,
       updatedAt: new Date().toISOString()
     };
@@ -511,9 +508,8 @@ function ScoutingApp() {
             setErrorMessage(null);
             setIsMobileSidebarOpen(false);
             if (view === 'settings') {
-              const isOwner = user?.email === 'barraganisaias2002@gmail.com';
               const isUnlocked = sessionStorage.getItem('scout_settings_unlocked') === 'true';
-              if (!isOwner && !isUnlocked) {
+              if (!isUnlocked) {
                 setIsSettingsLockedModalOpen(true);
                 return;
               }
@@ -526,7 +522,6 @@ function ScoutingApp() {
             setCurrentView('report');
             setIsMobileSidebarOpen(false);
           }}
-          onOpenRecovery={() => setIsRecoveryModalOpen(true)}
           isOpen={isMobileSidebarOpen}
           onClose={() => setIsMobileSidebarOpen(false)}
         />
@@ -559,7 +554,6 @@ function ScoutingApp() {
             onDeleteReport={handleDeleteReport}
             onNavigateToImageAnalysis={() => setCurrentView('image-analysis')}
             onRefresh={loadReportsList}
-            onOpenRecoveryModal={() => setIsRecoveryModalOpen(true)}
             isLoading={isLoading}
           />
         ) : currentView === 'report' && activeReport ? (
@@ -578,7 +572,7 @@ function ScoutingApp() {
             onOpenReportWithPlayer={handleOpenReportWithPlayer}
           />
         ) : currentView === 'settings' ? (
-          <SettingsView onOpenRecoveryModal={() => setIsRecoveryModalOpen(true)} />
+          <SettingsView />
         ) : currentView === 'image-analysis' ? (
           <ImageLineupAnalyzerView
             onReportSaved={(newReport) => {
@@ -599,17 +593,9 @@ function ScoutingApp() {
             onDeleteReport={handleDeleteReport}
             onNavigateToImageAnalysis={() => setCurrentView('image-analysis')}
             onRefresh={loadReportsList}
-            onOpenRecoveryModal={() => setIsRecoveryModalOpen(true)}
             isLoading={isLoading}
           />
         )}
-
-        {/* Data Recovery Modal */}
-        <DataRecoveryModal
-          isOpen={isRecoveryModalOpen}
-          onClose={() => setIsRecoveryModalOpen(false)}
-          onRestorationComplete={loadReportsList}
-        />
 
         {/* Delete Confirmation Modal */}
         {reportToDeleteId && (

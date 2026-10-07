@@ -22,6 +22,8 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
+const DEFAULT_SCRAPER_API_KEY = '2ed9f325d0e44b8c82c3e743093d8323';
+
 /**
  * Multi-provider Residential & Scraping Proxy Fetcher
  */
@@ -29,59 +31,152 @@ async function fetchWithResidentialProxy(
   targetUrl: string,
   options: {
     apiKey?: string;
-    provider?: 'scraperapi' | 'scrapingant' | 'custom' | 'public';
+    provider?: 'scraperapi' | 'scrapingant' | 'zenrows' | 'scrapingbee' | 'custom' | 'public';
     customUrl?: string;
+    returnDiagnostic?: boolean;
   } = {}
 ): Promise<any | null> {
-  const apiKey = options.apiKey || process.env.SCRAPER_API_KEY || process.env.SCRAPINGANT_API_KEY;
+  const apiKey = (options.apiKey || process.env.SCRAPER_API_KEY || DEFAULT_SCRAPER_API_KEY || process.env.SCRAPINGANT_API_KEY || '').trim();
   const provider = options.provider || (process.env.SCRAPINGANT_API_KEY ? 'scrapingant' : apiKey ? 'scraperapi' : 'public');
 
-  // 1. ScraperAPI (Rotating Residential IPs)
+  // Normalize target URLs: test both api.sofascore.com and www.sofascore.com
+  const apiSubdomainUrl = targetUrl.replace('https://www.sofascore.com/', 'https://api.sofascore.com/');
+  const wwwSubdomainUrl = targetUrl.replace('https://api.sofascore.com/', 'https://www.sofascore.com/');
+  const candidateUrls = [apiSubdomainUrl, wwwSubdomainUrl];
+
+  // 1. ScraperAPI (Rotating Residential IPs & Cloudflare Bypass)
   if (provider === 'scraperapi' && apiKey) {
-    try {
-      const proxyEndpoint = `https://api.scraperapi.com?api_key=${apiKey}&url=${encodeURIComponent(targetUrl)}&keep_headers=true`;
-      const resp = await fetch(proxyEndpoint, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          'Accept': 'application/json, text/plain, */*',
-          'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
-          'Referer': 'https://www.sofascore.com/',
-          'Origin': 'https://www.sofascore.com'
-        },
-        signal: AbortSignal.timeout(18000)
-      });
-      if (resp.ok) {
-        const text = await resp.text();
-        try {
-          return JSON.parse(text);
-        } catch {
-          console.warn('ScraperAPI returned non-JSON text');
+    // Strategy 1: Standard ScraperAPI on api.sofascore.com
+    for (const urlToFetch of candidateUrls) {
+      try {
+        const proxyEndpoint = `https://api.scraperapi.com?api_key=${apiKey}&url=${encodeURIComponent(urlToFetch)}`;
+        const resp = await fetch(proxyEndpoint, {
+          signal: AbortSignal.timeout(15000)
+        });
+
+        if (resp.ok) {
+          const text = await resp.text();
+          try {
+            const data = JSON.parse(text);
+            if (data && (data.lineups || data.event || data.home || data.players || data.heatmap || data.points || Array.isArray(data))) {
+              return data;
+            }
+          } catch {
+            console.warn('ScraperAPI returned non-JSON text on primary endpoint');
+          }
+        } else if (resp.status === 401 || resp.status === 403 || resp.status === 429) {
+          const errText = await resp.text().catch(() => '');
+          console.warn(`ScraperAPI status ${resp.status}: ${errText}`);
+          if (options.returnDiagnostic) {
+            return { _error: true, status: resp.status, message: errText || `ScraperAPI error (${resp.status})` };
+          }
         }
+      } catch (e: any) {
+        console.warn('ScraperAPI primary attempt error:', e.message);
       }
-    } catch (e) {
-      console.warn('ScraperAPI fetch failed:', e);
+    }
+
+    // Strategy 2: ScraperAPI with keep_headers=true and realistic headers
+    for (const urlToFetch of candidateUrls) {
+      try {
+        const proxyEndpoint = `https://api.scraperapi.com?api_key=${apiKey}&url=${encodeURIComponent(urlToFetch)}&keep_headers=true`;
+        const resp = await fetch(proxyEndpoint, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+            'Referer': 'https://www.sofascore.com/',
+            'Origin': 'https://www.sofascore.com'
+          },
+          signal: AbortSignal.timeout(18000)
+        });
+
+        if (resp.ok) {
+          const text = await resp.text();
+          try {
+            const data = JSON.parse(text);
+            if (data && (data.lineups || data.event || data.home || data.players || data.heatmap || data.points || Array.isArray(data))) {
+              return data;
+            }
+          } catch {
+            // next
+          }
+        }
+      } catch (e: any) {
+        console.warn('ScraperAPI keep_headers attempt error:', e.message);
+      }
     }
   }
 
   // 2. ScrapingAnt (Residential proxy)
   if (provider === 'scrapingant' && apiKey) {
-    try {
-      const proxyEndpoint = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(targetUrl)}&x-api-key=${apiKey}&browser=false`;
-      const resp = await fetch(proxyEndpoint, { signal: AbortSignal.timeout(12000) });
-      if (resp.ok) {
-        const text = await resp.text();
-        return JSON.parse(text);
+    for (const urlToFetch of candidateUrls) {
+      try {
+        const proxyEndpoint = `https://api.scrapingant.com/v2/general?url=${encodeURIComponent(urlToFetch)}&x-api-key=${apiKey}&browser=false`;
+        const resp = await fetch(proxyEndpoint, { signal: AbortSignal.timeout(14000) });
+        if (resp.ok) {
+          const text = await resp.text();
+          const data = JSON.parse(text);
+          if (data) return data;
+        } else if (resp.status === 401 || resp.status === 403 || resp.status === 429) {
+          const errText = await resp.text().catch(() => '');
+          if (options.returnDiagnostic) {
+            return { _error: true, status: resp.status, message: errText || `ScrapingAnt error (${resp.status})` };
+          }
+        }
+      } catch (e) {
+        console.warn('ScrapingAnt fetch failed:', e);
       }
-    } catch (e) {
-      console.warn('ScrapingAnt fetch failed:', e);
     }
   }
 
-  // 3. Custom Proxy (e.g. localhost:8010 or self-hosted proxy)
+  // 3. ZenRows (Fast Cloudflare Bypass proxy)
+  if (provider === 'zenrows' && apiKey) {
+    for (const urlToFetch of candidateUrls) {
+      try {
+        const proxyEndpoint = `https://api.zenrows.com/v1/?apikey=${apiKey}&url=${encodeURIComponent(urlToFetch)}`;
+        const resp = await fetch(proxyEndpoint, { signal: AbortSignal.timeout(14000) });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data) return data;
+        } else if (resp.status === 401 || resp.status === 403 || resp.status === 429) {
+          const errText = await resp.text().catch(() => '');
+          if (options.returnDiagnostic) {
+            return { _error: true, status: resp.status, message: errText || `ZenRows error (${resp.status})` };
+          }
+        }
+      } catch (e) {
+        console.warn('ZenRows fetch failed:', e);
+      }
+    }
+  }
+
+  // 4. ScrapingBee
+  if (provider === 'scrapingbee' && apiKey) {
+    for (const urlToFetch of candidateUrls) {
+      try {
+        const proxyEndpoint = `https://app.scrapingbee.com/api/v1/?api_key=${apiKey}&url=${encodeURIComponent(urlToFetch)}&render_js=false`;
+        const resp = await fetch(proxyEndpoint, { signal: AbortSignal.timeout(14000) });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data) return data;
+        } else if (resp.status === 401 || resp.status === 403 || resp.status === 429) {
+          const errText = await resp.text().catch(() => '');
+          if (options.returnDiagnostic) {
+            return { _error: true, status: resp.status, message: errText || `ScrapingBee error (${resp.status})` };
+          }
+        }
+      } catch (e) {
+        console.warn('ScrapingBee fetch failed:', e);
+      }
+    }
+  }
+
+  // 5. Custom Proxy (e.g. localhost:8010 or self-hosted proxy)
   if (provider === 'custom' && options.customUrl) {
     try {
       const cleanCustom = options.customUrl.replace(/\/+$/, '');
-      const pathSuffix = targetUrl.replace(/^https?:\/\/(?:www\.)?sofascore\.com/, '');
+      const pathSuffix = targetUrl.replace(/^https?:\/\/(?:www\.|api\.)?sofascore\.com/, '');
       const resp = await fetch(`${cleanCustom}${pathSuffix}`, { signal: AbortSignal.timeout(6000) });
       if (resp.ok) {
         return await resp.json();
@@ -91,11 +186,11 @@ async function fetchWithResidentialProxy(
     }
   }
 
-  // 4. Public Web Proxy Rotator (CORS & IP Rotators)
+  // 6. Public Web Proxy Rotator (CORS & IP Rotators)
   const publicProxies = [
-    `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-    `https://thingproxy.freeboard.io/fetch/${targetUrl}`
+    `https://corsproxy.io/?url=${encodeURIComponent(apiSubdomainUrl)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(apiSubdomainUrl)}`,
+    `https://thingproxy.freeboard.io/fetch/${apiSubdomainUrl}`
   ];
 
   for (const proxy of publicProxies) {
@@ -105,7 +200,7 @@ async function fetchWithResidentialProxy(
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
           'Accept': 'application/json'
         },
-        signal: AbortSignal.timeout(3000)
+        signal: AbortSignal.timeout(3500)
       });
       if (resp.ok) {
         const data = await resp.json();
@@ -331,20 +426,29 @@ async function startServer() {
 
   // 5. Test Proxy Connection Endpoint
   app.get('/api/sofascore/config-status', (_req, res) => {
-    const hasServerKey = Boolean(process.env.SCRAPER_API_KEY || process.env.SCRAPINGANT_API_KEY);
-    const provider = process.env.SCRAPINGANT_API_KEY ? 'scrapingant' : process.env.SCRAPER_API_KEY ? 'scraperapi' : 'none';
+    const hasServerKey = Boolean(process.env.SCRAPER_API_KEY || DEFAULT_SCRAPER_API_KEY || process.env.SCRAPINGANT_API_KEY);
+    const provider = process.env.SCRAPINGANT_API_KEY ? 'scrapingant' : (process.env.SCRAPER_API_KEY || DEFAULT_SCRAPER_API_KEY) ? 'scraperapi' : 'none';
     return res.json({ hasServerKey, provider });
   });
 
   app.post('/api/sofascore/test-proxy', async (req, res) => {
     const { apiKey, provider, customUrl } = req.body || {};
     try {
-      const testUrl = 'https://www.sofascore.com/api/v1/event/16924719/lineups';
-      const result = await fetchWithResidentialProxy(testUrl, { apiKey, provider, customUrl });
+      const testUrl = 'https://api.sofascore.com/api/v1/event/16924719/lineups';
+      const result = await fetchWithResidentialProxy(testUrl, { apiKey, provider, customUrl, returnDiagnostic: true });
       if (result && (result.home || result.lineups || result.players)) {
-        return res.json({ success: true, message: 'Proxy residencial operativo y conectado con Sofascore' });
+        return res.json({ success: true, message: '¡Conexión exitosa! Proxy residencial operativo y conectado con Sofascore' });
       }
-      return res.status(400).json({ success: false, error: 'El proxy no pudo obtener respuesta válida de Sofascore' });
+      if (result?._error) {
+        if (result.status === 401) {
+          return res.status(400).json({ success: false, error: 'API Key inválida o no reconocida por el proveedor. Revisa tu clave.' });
+        }
+        if (result.status === 403 || result.status === 429) {
+          return res.status(400).json({ success: false, error: 'Límite de peticiones alcanzado en tu cuenta (Créditos agotados o cuota mensual superada).' });
+        }
+        return res.status(400).json({ success: false, error: `Error del proveedor (${result.status}): ${result.message}` });
+      }
+      return res.status(400).json({ success: false, error: 'No se pudo obtener datos válidos de Sofascore a través del servicio proxy.' });
     } catch (err: any) {
       return res.status(500).json({ success: false, error: err.message || 'Error probando el proxy' });
     }

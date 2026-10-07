@@ -2,6 +2,7 @@ import { MatchDetails, Player, PlayerStatistics, HeatmapPoint, PlayerActionPoint
 import { parseFootballUrl, formatTeamNameFromSlug } from './urlParser';
 import { normalizeHeatmapData, generateActionPoints, generateTacticalHeatmap } from '../../utils/heatmapUtils';
 import { sanitizePlayerName } from '../../utils/countryFlags';
+import { getDistinctTeamName } from '../../utils/teamUtils';
 
 /**
  * Maps raw Sofascore position string (G, D, M, F, GK, CB, etc.) to standard app position
@@ -463,13 +464,20 @@ export function transformSofascorePayload(
     }
   }
 
-  const homeName = (typeof homeTeamInfo.name === 'string' && homeTeamInfo.name) 
+  const rawHomeName = (typeof homeTeamInfo.name === 'string' && homeTeamInfo.name) 
     ? homeTeamInfo.name 
     : (slugHome || payload.homeTeamName || 'Equipo Local');
 
-  const awayName = (typeof awayTeamInfo.name === 'string' && awayTeamInfo.name) 
+  const rawAwayName = (typeof awayTeamInfo.name === 'string' && awayTeamInfo.name) 
     ? awayTeamInfo.name 
     : (slugAway || payload.awayTeamName || 'Equipo Visitante');
+
+  const tournamentName = event?.tournament?.name || payload.tournament?.name || event?.tournament?.category?.name || 'Competición Oficial';
+  const round = event?.roundInfo?.round ? `Jornada ${event.roundInfo.round}` : (event?.roundInfo?.name || 'Fase de Grupos');
+  const competition = tournamentName;
+
+  const homeName = getDistinctTeamName({ ...homeTeamInfo, name: rawHomeName }, competition);
+  const awayName = getDistinctTeamName({ ...awayTeamInfo, name: rawAwayName }, competition);
 
   const homeScore = event?.homeScore?.current ?? event?.homeScore?.display ?? payload.homeScore ?? 0;
   const awayScore = event?.awayScore?.current ?? event?.awayScore?.display ?? payload.awayScore ?? 0;
@@ -509,10 +517,6 @@ export function transformSofascorePayload(
   const matchId = eventId
     ? `sofascore-${eventId}`
     : (urlOrId ? `sofascore-${urlOrId.replace(/[^a-zA-Z0-9-]/g, '')}` : `sofascore-${Date.now()}`);
-
-  const tournamentName = event?.tournament?.name || payload.tournament?.name || 'Competición Oficial';
-  const round = event?.roundInfo?.round ? `Jornada ${event.roundInfo.round}` : (event?.roundInfo?.name || 'Fase de Grupos');
-  const competition = tournamentName;
 
   const stadium = event?.venue?.stadium?.name || event?.venue?.name || 'Estadio Principal';
   const referee = event?.referee?.name ? `${event.referee.name} (${event.referee.country?.name || ''})` : 'Árbitro Oficial';

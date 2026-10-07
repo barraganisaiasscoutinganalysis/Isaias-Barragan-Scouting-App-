@@ -1,37 +1,63 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isAuthenticated() {
+
+    // Default deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
       return request.auth != null;
     }
 
     function isOwner(userId) {
-      return isAuthenticated() && (request.auth.uid == userId || request.auth.token.email == 'barraganisaias2002@gmail.com');
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    match /users/{userId} {
-      allow read, write: if isAuthenticated();
-
-      match /{allSubcollections=**} {
-        allow read, write: if isAuthenticated();
-      }
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    match /reports/{reportId} {
-      allow read, write: if isAuthenticated();
+    function incoming() {
+      return request.resource.data;
     }
 
-    match /evaluations/{evalId} {
-      allow read, write: if isAuthenticated();
+    function existing() {
+      return resource.data;
     }
 
-    match /playerReports/{pId} {
-      allow read, write: if isAuthenticated();
+    // Connection testing endpoint for health verification
+    match /test/connection {
+      allow read: if true;
     }
 
-    match /{document=**} {
-      allow read, write: if isAuthenticated();
+    // Match Scouting Reports scoped per user
+    match /users/{userId}/reports/{reportId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) 
+        && isValidId(reportId)
+        && incoming().userId == userId
+        && incoming().id == reportId;
+      allow update: if isOwner(userId) 
+        && isValidId(reportId)
+        && incoming().userId == userId
+        && incoming().id == existing().id;
+      allow delete: if isOwner(userId) && isValidId(reportId);
+    }
+
+    // Player Dossiers scoped per user
+    match /users/{userId}/playerDossiers/{playerId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) 
+        && isValidId(playerId)
+        && incoming().userId == userId
+        && incoming().playerId == playerId;
+      allow update: if isOwner(userId) 
+        && isValidId(playerId)
+        && incoming().userId == userId
+        && incoming().playerId == existing().playerId;
+      allow delete: if isOwner(userId) && isValidId(playerId);
     }
   }
 }
-

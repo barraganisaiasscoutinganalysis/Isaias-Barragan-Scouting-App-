@@ -19,8 +19,7 @@ export const ColorEditorModal: React.FC = () => {
     updateColorKey, 
     resetToDefault, 
     isEditorOpen, 
-    setIsEditorOpen,
-    currentUserEmail
+    setIsEditorOpen
   } = useTheme();
 
   if (!isEditorOpen) return null;
@@ -104,7 +103,7 @@ export const ColorEditorModal: React.FC = () => {
                   className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border"
                   style={{ backgroundColor: `${theme.primary}15`, borderColor: `${theme.primary}30`, color: theme.primary }}
                 >
-                  {currentUserEmail ? `Cuenta: ${currentUserEmail}` : 'Perfil Local'}
+                  Personalización
                 </span>
               </div>
               <p className="text-xs" style={{ color: theme.textMuted }}>

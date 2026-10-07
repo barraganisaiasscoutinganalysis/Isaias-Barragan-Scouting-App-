@@ -1,97 +1,125 @@
 {
   "entities": {
-    "Report": {
-      "title": "Match Report",
-      "description": "Scouting report for a football match",
+    "MatchReport": {
+      "title": "MatchReport",
+      "description": "Complete tactical scouting report of a football match including lineups, ratings, and notes",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "matchId": { "type": "string" },
-        "homeTeam": { "type": "string" },
-        "awayTeam": { "type": "string" },
-        "homeScore": { "type": "number" },
-        "awayScore": { "type": "number" },
-        "competition": { "type": "string" },
-        "season": { "type": "string" },
-        "matchDate": { "type": "string" },
-        "stadium": { "type": "string" },
-        "status": { "type": "string" },
-        "generalNotes": { "type": "string" },
-        "createdAt": { "type": "string" },
-        "updatedAt": { "type": "string" }
+        "id": {
+          "type": "string",
+          "description": "Unique report ID",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Auth UID of the owner scout",
+          "maxLength": 128
+        },
+        "meta": {
+          "type": "object",
+          "description": "Metadata summary of the match and evaluation status"
+        },
+        "match": {
+          "type": "object",
+          "description": "Parsed match details including teams, players, events, and stats"
+        },
+        "evaluations": {
+          "type": "object",
+          "description": "Scout ratings and notes mapped by player ID"
+        },
+        "eventNotes": {
+          "type": "object",
+          "description": "Scout tactical annotations on specific match events"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the report was created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the report was last updated"
+        }
       },
-      "required": ["id", "userId", "matchId", "homeTeam", "awayTeam", "updatedAt"]
+      "required": ["id", "userId", "meta", "match", "createdAt", "updatedAt"]
     },
-    "Evaluation": {
-      "title": "Player Scout Evaluation",
-      "description": "Scout observation, rating and tags for a player in a specific match report",
+    "PlayerDossier": {
+      "title": "PlayerDossier",
+      "description": "Long-term scouting dossier and assessment of an individual football player",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "reportId": { "type": "string" },
-        "playerId": { "type": "string" },
-        "matchId": { "type": "string" },
-        "userId": { "type": "string" },
-        "rating": { "type": "number" },
-        "ratingType": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
-        "comment": { "type": "string" },
-        "tags": { "type": "array", "items": { "type": "string" } },
-        "updatedAt": { "type": "string" }
+        "playerId": {
+          "type": "string",
+          "description": "Unique identifier of the player",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Auth UID of the scout",
+          "maxLength": 128
+        },
+        "playerName": {
+          "type": "string",
+          "description": "Player full name",
+          "maxLength": 120
+        },
+        "teamName": {
+          "type": "string",
+          "description": "Current club name",
+          "maxLength": 120
+        },
+        "positionLabel": {
+          "type": "string",
+          "description": "Main tactical position",
+          "maxLength": 50
+        },
+        "overallRating": {
+          "type": "number",
+          "description": "Scout overall evaluation grade"
+        },
+        "recommendation": {
+          "type": "string",
+          "enum": ["SIGN", "MONITOR", "DISCARD", "HOLD"],
+          "description": "Scouting decision"
+        },
+        "projectedRole": {
+          "type": "string",
+          "description": "Projected squad role",
+          "maxLength": 100
+        },
+        "strengths": {
+          "type": "string",
+          "description": "Key player strengths",
+          "maxLength": 2000
+        },
+        "weaknesses": {
+          "type": "string",
+          "description": "Key player weaknesses",
+          "maxLength": 2000
+        },
+        "summaryNotes": {
+          "type": "string",
+          "description": "Comprehensive scouting summary notes",
+          "maxLength": 5000
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last updated timestamp"
+        }
       },
-      "required": ["reportId", "playerId", "matchId", "userId", "updatedAt"]
-    },
-    "EventNote": {
-      "title": "Match Event Note",
-      "description": "Scout note for a specific timeline event",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "reportId": { "type": "string" },
-        "eventId": { "type": "string" },
-        "userId": { "type": "string" },
-        "note": { "type": "string" },
-        "updatedAt": { "type": "string" }
-      },
-      "required": ["reportId", "eventId", "userId", "updatedAt"]
-    },
-    "PlayerReport": {
-      "title": "Player General Scouting Dossier",
-      "description": "Global scout assessment, projection and notes for a player across all matches",
-      "type": "object",
-      "properties": {
-        "playerId": { "type": "string" },
-        "playerName": { "type": "string" },
-        "teamName": { "type": "string" },
-        "positionLabel": { "type": "string" },
-        "overallRating": { "type": "number" },
-        "recommendation": { "type": "string", "enum": ["SIGN", "MONITOR", "FUTURE", "DISCARD"] },
-        "projectedRole": { "type": "string" },
-        "strengths": { "type": "string" },
-        "weaknesses": { "type": "string" },
-        "summaryNotes": { "type": "string" },
-        "updatedAt": { "type": "string" },
-        "userId": { "type": "string" }
-      },
-      "required": ["playerId", "playerName", "updatedAt", "userId"]
+      "required": ["playerId", "userId", "playerName", "updatedAt"]
     }
   },
   "firestore": {
     "/users/{userId}/reports/{reportId}": {
-      "schema": "Report",
-      "description": "User match scouting reports"
+      "schema": "MatchReport",
+      "description": "Stores user-specific match scouting reports"
     },
-    "/users/{userId}/evaluations/{evaluationId}": {
-      "schema": "Evaluation",
-      "description": "Scout player evaluations scoped to match report"
-    },
-    "/users/{userId}/eventNotes/{noteId}": {
-      "schema": "EventNote",
-      "description": "Scout timeline event annotations"
-    },
-    "/users/{userId}/playerReports/{playerId}": {
-      "schema": "PlayerReport",
-      "description": "User player dossiers and general scouting reports"
+    "/users/{userId}/playerDossiers/{playerId}": {
+      "schema": "PlayerDossier",
+      "description": "Stores user-specific player dossiers"
     }
   }
 }

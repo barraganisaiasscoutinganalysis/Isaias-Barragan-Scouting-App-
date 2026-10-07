@@ -3,17 +3,16 @@ import {
   FileText, 
   Users, 
   Settings, 
-  Shield, 
-  Activity, 
-  LogOut, 
-  LogIn, 
   ChevronRight,
-  Database,
   Palette,
-  FileImage
+  FileImage,
+  Cloud,
+  LogIn,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { Logo } from './Logo';
 
 interface SidebarProps {
@@ -21,7 +20,6 @@ interface SidebarProps {
   onNavigate: (view: 'dashboard' | 'players' | 'settings' | 'image-analysis') => void;
   hasActiveReport: boolean;
   onOpenActiveReport?: () => void;
-  onOpenRecovery?: () => void;
   isOpen?: boolean;
   onClose?: () => void;
 }
@@ -31,12 +29,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNavigate,
   hasActiveReport,
   onOpenActiveReport,
-  onOpenRecovery,
   isOpen = false,
   onClose,
 }) => {
-  const { user, signInWithGoogle, signOut } = useAuth();
   const { theme, setIsEditorOpen } = useTheme();
+  const { user, signInWithGoogle, signOut, isOnline } = useAuth();
 
   return (
     <>
@@ -140,72 +137,54 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Palette className="w-4 h-4 text-amber-400" />
           <span>Editar Colores</span>
         </button>
-
-        {onOpenRecovery && (
-          <button
-            onClick={() => {
-              onOpenRecovery();
-              if (onClose) onClose();
-            }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-xs font-medium text-amber-400 hover:bg-amber-500/10 border border-amber-500/20 transition-all cursor-pointer mt-1"
-          >
-            <Database className="w-4 h-4 text-amber-400" />
-            <span>Recuperar Datos</span>
-          </button>
-        )}
-
-        {/* Source indicator badge */}
-        <div className="pt-6 px-2">
-          <div className="p-2.5 rounded bg-[#111827] border border-[#334155]/60 text-[11px]">
-            <div className="flex items-center gap-1.5 text-amber-400 font-mono text-[10px] font-semibold mb-1">
-              <Database className="w-3 h-3" />
-              <span>DATA ENGINE</span>
-            </div>
-            <p className="text-[#94A3B8] text-[11px] leading-relaxed">
-              Capa de adaptador Sofascore activa con persistencia local & Firestore.
-            </p>
-          </div>
-        </div>
       </div>
 
-      {/* User Footer with Firebase Auth */}
-      <div className="p-3 border-t border-[#334155]/40 bg-[#0A0D14]">
+      {/* User & Cloud Persistence Footer */}
+      <div className="p-3 border-t border-[#334155]/40 bg-[#0A0D14] space-y-2">
         {user ? (
-          <div className="flex items-center justify-between gap-2 p-1.5 rounded bg-[#111827] border border-[#334155]/50">
-            <div className="flex items-center gap-2 min-w-0">
-              {user.photoURL ? (
-                <img src={user.photoURL} alt={user.displayName || 'Scout'} className="w-7 h-7 rounded-full border border-amber-400/40 object-cover" />
-              ) : (
-                <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-300 font-mono text-xs flex items-center justify-center font-bold">
-                  {user.email?.[0].toUpperCase() || 'S'}
-                </div>
-              )}
-              <div className="min-w-0">
-                <p className="text-xs font-medium text-white truncate leading-tight">
-                  {user.displayName || 'Scout Autorizado'}
-                </p>
-                <p className="text-[10px] text-emerald-400 font-mono truncate">Cloud Sync Activo</p>
+          <div className="p-2.5 rounded bg-[#111827] border border-[#334155]/60 text-[11px]">
+            <div className="flex items-center justify-between gap-1 mb-1.5">
+              <div className="flex items-center gap-1.5 min-w-0">
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt={user.displayName || 'Scout'} className="w-5 h-5 rounded-full" />
+                ) : (
+                  <UserIcon className="w-4 h-4 text-amber-400 shrink-0" />
+                )}
+                <span className="font-medium text-white truncate text-[11px]">
+                  {user.displayName || user.email?.split('@')[0] || 'Scout'}
+                </span>
               </div>
+              <button
+                onClick={() => signOut()}
+                className="text-[#94A3B8] hover:text-red-400 p-1 rounded transition-colors cursor-pointer"
+                title="Cerrar sesión"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <button
-              onClick={() => signOut()}
-              title="Cerrar sesión"
-              className="p-1.5 text-[#94A3B8] hover:text-rose-400 hover:bg-[#1E293B] rounded transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-1.5 text-emerald-400 font-mono text-[9px]">
+              <Cloud className="w-3 h-3 text-emerald-400" />
+              <span>Nube Firebase Conectada</span>
+            </div>
           </div>
         ) : (
-          <button
-            onClick={() => signInWithGoogle()}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-400 text-xs font-medium transition-all"
-          >
-            <LogIn className="w-3.5 h-3.5" />
-            <span>Iniciar sesión Google</span>
-          </button>
+          <div className="space-y-1.5">
+            <button
+              onClick={() => signInWithGoogle()}
+              className="w-full py-2 px-2.5 rounded bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Iniciar con Google</span>
+            </button>
+            <div className="flex items-center justify-center gap-1 text-[#64748B] text-[10px] font-mono">
+              <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+              <span>{isOnline ? 'Firebase Listo' : 'Modo Local'}</span>
+            </div>
+          </div>
         )}
       </div>
     </aside>
     </>
   );
 };
+

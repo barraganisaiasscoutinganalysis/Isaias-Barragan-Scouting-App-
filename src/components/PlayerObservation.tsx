@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Check, Clock } from 'lucide-react';
+import { Save, Check, Clock, AlertCircle, Loader2 } from 'lucide-react';
 
 interface PlayerObservationProps {
   initialComment: string;
@@ -13,21 +13,33 @@ export const PlayerObservation: React.FC<PlayerObservationProps> = ({
   lastUpdated,
 }) => {
   const [comment, setComment] = useState(initialComment || '');
+  const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
     setComment(initialComment || '');
     setIsDirty(false);
+    setSaveError(null);
   }, [initialComment]);
 
   const handleSave = async () => {
-    await onSave(comment);
-    setIsDirty(false);
-    setIsSaved(true);
-    setTimeout(() => {
-      setIsSaved(false);
-    }, 2500);
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await onSave(comment);
+      setIsDirty(false);
+      setIsSaved(true);
+      setTimeout(() => {
+        setIsSaved(false);
+      }, 2500);
+    } catch (error: any) {
+      console.error('Error guardando observación:', error);
+      setSaveError('Error al guardar en Firestore. Tus notas siguen aquí. Reintentá.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -48,10 +60,18 @@ export const PlayerObservation: React.FC<PlayerObservationProps> = ({
           setComment(e.target.value);
           setIsDirty(true);
           setIsSaved(false);
+          setSaveError(null);
         }}
         placeholder="Escribí tus observaciones sobre el desempeño del jugador..."
         className="w-full p-3 rounded bg-[#0A0D14] border border-[#334155] focus:border-blue-500 text-xs text-white placeholder-[#64748B] focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none leading-relaxed font-sans"
       />
+
+      {saveError && (
+        <div className="p-2 rounded bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center gap-1.5 font-mono">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-400" />
+          <span>{saveError}</span>
+        </div>
+      )}
 
       <div className="flex items-center justify-between pt-1">
         <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#64748B]">
@@ -68,19 +88,31 @@ export const PlayerObservation: React.FC<PlayerObservationProps> = ({
         <button
           type="button"
           onClick={handleSave}
-          disabled={!isDirty && !isSaved}
+          disabled={isSaving || (!isDirty && !isSaved && !saveError)}
           className={`px-3.5 py-1.5 rounded text-xs font-medium font-mono uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
             isSaved
               ? 'bg-emerald-600 text-white'
+              : saveError
+              ? 'bg-red-600 hover:bg-red-500 text-white shadow-md'
               : isDirty
               ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/30'
               : 'bg-[#1E293B] text-[#64748B] border border-[#334155] cursor-default'
           }`}
         >
-          {isSaved ? (
+          {isSaving ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Guardando...</span>
+            </>
+          ) : isSaved ? (
             <>
               <Check className="w-3.5 h-3.5" />
               <span>Guardado</span>
+            </>
+          ) : saveError ? (
+            <>
+              <Save className="w-3.5 h-3.5" />
+              <span>Reintentar</span>
             </>
           ) : (
             <>

@@ -32,6 +32,7 @@ import {
   PlayerRecommendation 
 } from '../types/scouting';
 import { getCountryFlagUrl, sanitizePlayerName, cleanCompetitionName } from '../utils/countryFlags';
+import { getDistinctTeamName } from '../utils/teamUtils';
 import { storageService } from '../services/storage/storageService';
 import { exportElementToPDF, exportElementToPNG } from '../utils/exportUtils';
 import { resolvePlayerPosition, matchesPlayerPosition } from '../utils/positionUtils';
@@ -150,12 +151,10 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
   const availableTeams = useMemo(() => {
     const teamsSet = new Set<string>();
     reports.forEach((r) => {
-      if (r.match.homeTeam?.name) {
-        teamsSet.add(r.match.homeTeam.shortName || r.match.homeTeam.name);
-      }
-      if (r.match.awayTeam?.name) {
-        teamsSet.add(r.match.awayTeam.shortName || r.match.awayTeam.name);
-      }
+      const homeDistinct = getDistinctTeamName(r.match.homeTeam, r.match.competition, r.meta.competition);
+      const awayDistinct = getDistinctTeamName(r.match.awayTeam, r.match.competition, r.meta.competition);
+      if (homeDistinct) teamsSet.add(homeDistinct);
+      if (awayDistinct) teamsSet.add(awayDistinct);
     });
     return Array.from(teamsSet).filter(Boolean).sort((a, b) => a.localeCompare(b));
   }, [reports]);
@@ -165,8 +164,8 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
     const playerMap = new Map<string, GroupedPlayer>();
 
     reports.forEach((rep) => {
-      const homeTeamName = rep.match.homeTeam.shortName || rep.match.homeTeam.name;
-      const awayTeamName = rep.match.awayTeam.shortName || rep.match.awayTeam.name;
+      const homeTeamName = getDistinctTeamName(rep.match.homeTeam, rep.match.competition, rep.meta.competition);
+      const awayTeamName = getDistinctTeamName(rep.match.awayTeam, rep.match.competition, rep.meta.competition);
       const matchTitle = `${homeTeamName} vs ${awayTeamName}`;
       const competition = cleanCompetitionName(rep.meta.competition || rep.match.competition);
       const matchDate = rep.meta.matchDate || rep.match.date;
@@ -179,10 +178,12 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
       ];
 
       allPlayersWithTeam.forEach(({ player: p, teamName }) => {
-        const groupKey = p.id || p.name.toLowerCase().trim();
+        const rawId = String(p.id || '');
+        const isGlobalId = /^(?:sofa-)?\d{4,}$/.test(rawId);
+        // Collision-proof player group key: Global numeric Sofascore ID or Name scoped by distinct Team Name
+        const groupKey = isGlobalId ? rawId : `${p.name.toLowerCase().trim()}___${teamName.toLowerCase().trim()}`;
         
         // Match evaluation flexibly by p.id, string ID, prefixed ID, or player name
-        const rawId = String(p.id || '');
         const strippedId = rawId.replace(/^sofa-/, '');
         const ev = rep.evaluations[p.id] ||
                    rep.evaluations[rawId] ||
@@ -211,7 +212,7 @@ export const PlayersView: React.FC<PlayersViewProps> = ({
         }
 
         const existing = playerMap.get(groupKey)!;
-        if (teamName && !existing.teamName) {
+        if (teamName) {
           existing.teamName = teamName;
         }
 

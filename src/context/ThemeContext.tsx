@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from './AuthContext';
 
 export interface ThemeColors {
   primary: string;         // Main brand accent (e.g., #F9C34D gold)
@@ -128,26 +127,17 @@ interface ThemeContextType {
   resetToDefault: () => void;
   isEditorOpen: boolean;
   setIsEditorOpen: (open: boolean) => void;
-  currentUserEmail: string | null;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
-  const userEmail = user?.email || null;
-
   const [theme, setThemeState] = useState<ThemeColors>(THEME_PRESETS[0].colors);
   const [presetId, setPresetId] = useState<string>(THEME_PRESETS[0].id);
   const [isEditorOpen, setIsEditorOpen] = useState<boolean>(false);
 
-  const getStorageKey = () => {
-    return userEmail ? `isaias_scout_theme_${userEmail}` : 'isaias_scout_theme_guest';
-  };
-
-  const getPresetKey = () => {
-    return userEmail ? `isaias_scout_preset_${userEmail}` : 'isaias_scout_preset_guest';
-  };
+  const STORAGE_KEY = 'isaias_scout_theme';
+  const PRESET_KEY = 'isaias_scout_preset';
 
   // Apply CSS variables to root element
   const applyCssVariables = (colors: ThemeColors) => {
@@ -167,13 +157,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     document.body.style.color = colors.textPrimary;
   };
 
-  // Load user-specific theme whenever authenticated user changes
   useEffect(() => {
-    const sKey = getStorageKey();
-    const pKey = getPresetKey();
-
-    const savedTheme = localStorage.getItem(sKey);
-    const savedPreset = localStorage.getItem(pKey);
+    const savedTheme = localStorage.getItem(STORAGE_KEY);
+    const savedPreset = localStorage.getItem(PRESET_KEY);
 
     if (savedTheme) {
       try {
@@ -194,11 +180,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } else {
       setPresetId(THEME_PRESETS[0].id);
     }
-  }, [userEmail]);
+  }, []);
 
   const setTheme = (newColors: ThemeColors) => {
     setThemeState(newColors);
-    localStorage.setItem(getStorageKey(), JSON.stringify(newColors));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newColors));
     applyCssVariables(newColors);
   };
 
@@ -206,7 +192,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const found = THEME_PRESETS.find((p) => p.id === id);
     if (found) {
       setPresetId(id);
-      localStorage.setItem(getPresetKey(), id);
+      localStorage.setItem(PRESET_KEY, id);
       setTheme(found.colors);
     }
   };
@@ -214,7 +200,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const updateColorKey = (key: keyof ThemeColors, value: string) => {
     const updated = { ...theme, [key]: value };
     setPresetId('custom');
-    localStorage.setItem(getPresetKey(), 'custom');
+    localStorage.setItem(PRESET_KEY, 'custom');
     setTheme(updated);
   };
 
@@ -233,7 +219,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         resetToDefault,
         isEditorOpen,
         setIsEditorOpen,
-        currentUserEmail: userEmail,
       }}
     >
       {children}

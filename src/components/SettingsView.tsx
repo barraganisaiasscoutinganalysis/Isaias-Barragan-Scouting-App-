@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Settings as SettingsIcon, 
-  Database, 
   Server, 
   CheckCircle2, 
   Copy, 
@@ -16,39 +15,27 @@ import {
   Palette,
   Upload,
   Download,
-  FileJson,
   FolderArchive,
-  RefreshCw,
-  Trash2,
   Image as ImageIcon
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { storageService } from '../services/storage/storageService';
-import { migrateFirebaseToSupabase, MigrationResult } from '../services/storage/migrationService';
-import { supabase } from '../services/supabase';
 import { Logo } from './Logo';
+import { 
+  Cloud, 
+  LogIn, 
+  LogOut, 
+  Database, 
+  User as UserIcon,
+  RefreshCw
+} from 'lucide-react';
 
-interface SettingsViewProps {
-  onOpenRecoveryModal?: () => void;
-}
-
-export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenRecoveryModal }) => {
-  const { user, signInWithGoogle, signInWithEmail, signUpWithEmail, signInAsDemoScout, signOut } = useAuth();
+export const SettingsView: React.FC = () => {
   const { setIsEditorOpen } = useTheme();
-
-  // Auth form state
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [authSuccess, setAuthSuccess] = useState<string | null>(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(false);
-
-  // Migration state
-  const [isMigrating, setIsMigrating] = useState(false);
-  const [migrationResult, setMigrationResult] = useState<MigrationResult | null>(null);
-  const [copiedSql, setCopiedSql] = useState(false);
+  const { user, signInWithGoogle, signOut, isOnline } = useAuth();
+  const [syncingCloud, setSyncingCloud] = useState(false);
+  const [cloudSyncMsg, setCloudSyncMsg] = useState<string | null>(null);
 
   // Backup / Restore state
   const [isExporting, setIsExporting] = useState(false);
@@ -57,7 +44,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenRecoveryModal 
   const [backupErrorMsg, setBackupErrorMsg] = useState<string | null>(null);
   
   // Scraper API (Option 4)
-  const [scraperProvider, setScraperProvider] = useState<'scraperapi' | 'scrapingant' | 'custom'>('scraperapi');
+  const [scraperProvider, setScraperProvider] = useState<'scraperapi' | 'scrapingant' | 'zenrows' | 'scrapingbee' | 'custom'>('scraperapi');
   const [scraperApiKey, setScraperApiKey] = useState('');
   const [scraperStatus, setScraperStatus] = useState<'idle' | 'testing' | 'connected' | 'error'>('idle');
   const [scraperMessage, setScraperMessage] = useState<string | null>(null);
@@ -90,7 +77,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenRecoveryModal 
       .catch(() => {});
   }, []);
 
-  const handleSaveScraper = (key: string, provider: 'scraperapi' | 'scrapingant' | 'custom') => {
+  const handleSaveScraper = (key: string, provider: 'scraperapi' | 'scrapingant' | 'zenrows' | 'scrapingbee' | 'custom') => {
     setScraperApiKey(key);
     setScraperProvider(provider);
     localStorage.setItem('sofascore_scraper_key', key);
@@ -208,8 +195,102 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenRecoveryModal 
           <span>Ajustes de Plataforma & Configuración</span>
         </h1>
         <p className="text-xs text-[#94A3B8] mt-1">
-          Configuración de proxies residenciales, copias de seguridad de datos, sesión y personalización visual.
+          Configuración de base de datos Firebase Firestore, proxies residenciales, copias de seguridad de datos y personalización visual.
         </p>
+      </div>
+
+      {/* FIREBASE FIRESTORE CLOUD CARD */}
+      <div className="rounded-xl bg-[#111827] border border-amber-500/30 p-6 space-y-5 shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#334155]/60 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+              <Cloud className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white uppercase font-mono flex items-center gap-2">
+                <span>Base de Datos Cloud Firestore (Firebase)</span>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-normal font-sans border border-emerald-500/30">
+                  {isOnline ? 'Online & Activa' : 'Modo Offline'}
+                </span>
+              </h3>
+              <p className="text-xs text-[#94A3B8] mt-0.5">
+                Proyecto: <code className="text-amber-300 font-mono">gold-range-2mn89</code> (Región: <span className="text-white">us-east1</span>)
+              </p>
+            </div>
+          </div>
+
+          <div>
+            {user ? (
+              <button
+                onClick={() => signOut()}
+                className="px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 font-semibold text-xs flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Cerrar Sesión</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => signInWithGoogle()}
+                className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs flex items-center gap-2 transition-colors cursor-pointer shadow-md shadow-amber-500/20"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Iniciar con Google</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* User / Session Details */}
+        <div className="p-4 rounded-lg bg-[#0A0D14] border border-[#334155] flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {user?.photoURL ? (
+              <img src={user.photoURL} alt={user.displayName || 'Scout'} className="w-10 h-10 rounded-full border border-amber-500/30" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-[#1E293B] border border-[#334155] flex items-center justify-center text-amber-400">
+                <UserIcon className="w-5 h-5" />
+              </div>
+            )}
+            <div>
+              <p className="text-sm font-semibold text-white">
+                {user ? user.displayName || 'Scout Autenticado' : 'Modo Invitado / Sin Iniciar Sesión'}
+              </p>
+              <p className="text-xs text-[#94A3B8]">
+                {user ? user.email : 'Inicia sesión para sincronizar automáticamente tus informes y dossiers en Firestore.'}
+              </p>
+            </div>
+          </div>
+
+          {user && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  setSyncingCloud(true);
+                  setCloudSyncMsg(null);
+                  try {
+                    if (storageService.syncAll) await storageService.syncAll();
+                    setCloudSyncMsg('¡Sincronización en la nube completada!');
+                  } catch (e: any) {
+                    setCloudSyncMsg('Error al sincronizar: ' + (e.message || String(e)));
+                  } finally {
+                    setSyncingCloud(false);
+                  }
+                }}
+                disabled={syncingCloud}
+                className="px-3.5 py-1.5 rounded bg-[#1E293B] hover:bg-[#334155] border border-[#334155] text-white text-xs font-mono flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${syncingCloud ? 'animate-spin' : ''}`} />
+                <span>{syncingCloud ? 'Sincronizando...' : 'Forzar Sincronización'}</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {cloudSyncMsg && (
+          <div className="p-3 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>{cloudSyncMsg}</span>
+          </div>
+        )}
       </div>
 
       {/* BLINDAJE & COPIAS DE SEGURIDAD (ANTI-DATA-LOSS VAULT) */}
@@ -223,31 +304,31 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenRecoveryModal 
               <h3 className="text-sm font-bold text-white uppercase font-mono flex items-center gap-2">
                 <span>Blindaje de Datos & Copias de Seguridad</span>
                 <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-normal font-sans border border-emerald-500/30">
-                  Protección 5x Capas
+                  Arquitectura Limpia
                 </span>
               </h3>
               <p className="text-xs text-[#94A3B8]">
-                Evita pérdidas de datos exportando respaldos a tu computadora o restaurando en 1 clic.
+                Exporta respaldos completos en formato .JSON a tu computadora o restaura datos en 1 clic.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Info Box: ¿Cómo funciona y por qué se puede desfasar? */}
+        {/* Info Box */}
         <div className="p-3.5 rounded-lg bg-[#0A0D14] border border-[#334155] space-y-2 text-xs text-[#94A3B8]">
           <p className="text-white font-semibold flex items-center gap-1.5 font-mono text-[11px]">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-            ¿Cómo garantizar que nunca más se pierdan tus notas de scouting?
+            Capa de Datos Desacoplada (DataService Abstraction)
           </p>
           <ul className="list-disc list-inside space-y-1 text-[11px] text-[#94A3B8] pl-1">
             <li>
-              <strong className="text-white">Almacenamiento Híbrido Activo:</strong> Cada partido o nota se guarda simultáneamente en tu navegador (<code className="text-cyan-400">LocalStorage</code>), en un historial de snapshots rolling, y en tu cuenta de <code className="text-emerald-400">Firestore Cloud</code>.
+              <strong className="text-white">Persistencia Desacoplada:</strong> La aplicación opera a través de una interfaz de servicio unificada (<code className="text-cyan-400">dataService</code>).
             </li>
             <li>
-              <strong className="text-white">Cuidado al manipular Firebase Console:</strong> Los datos en Firestore están organizados bajo <code className="text-amber-400">users/{'{'}tu_UID{'}'}/reports</code>. Si borras documentos directamente en Firebase o cambias de cuenta de Google, los datos de ese UID no se cargan automáticamente a menos que uses la herramienta de recuperación.
+              <strong className="text-white">Preparada para Conexión:</strong> Lista para conectar una nueva base de datos limpia en cualquier momento.
             </li>
             <li>
-              <strong className="text-white">Buenas Prácticas:</strong> Descarga una copia de seguridad <code className="text-emerald-400">.json</code> periódicamente con el botón verde abajo para tener siempre una copia física en tu computadora.
+              <strong className="text-white">Buenas Prácticas:</strong> Descarga una copia de seguridad <code className="text-emerald-400">.json</code> periódicamente para conservar tus informes de partidos y dossiers.
             </li>
           </ul>
         </div>
@@ -290,17 +371,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenRecoveryModal 
               className="hidden"
             />
           </label>
-
-          {/* Recovery modal button */}
-          {onOpenRecoveryModal && (
-            <button
-              onClick={onOpenRecoveryModal}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 active:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold font-mono uppercase tracking-wider transition-all cursor-pointer"
-            >
-              <RefreshCw className="w-4 h-4 text-amber-400" />
-              <span>Centro de Recuperación</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -345,6 +415,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenRecoveryModal 
             >
               <option value="scraperapi">ScraperAPI (Plan Gratuito: 5.000 peticiones)</option>
               <option value="scrapingant">ScrapingAnt (Plan Gratuito: 10.000 peticiones)</option>
+              <option value="zenrows">ZenRows (Plan Gratuito: 1.000 peticiones)</option>
+              <option value="scrapingbee">ScrapingBee (Plan Gratuito: 1.000 peticiones)</option>
               <option value="custom">Proxy Personalizado / Local</option>
             </select>
           </div>
@@ -358,6 +430,39 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenRecoveryModal 
               {scraperProvider === 'scraperapi' && (
                 <a
                   href="https://www.scraperapi.com/signup"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-blue-400 hover:text-blue-300 font-mono flex items-center gap-0.5"
+                >
+                  <span>Obtener clave gratis</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+              {scraperProvider === 'scrapingant' && (
+                <a
+                  href="https://scrapingant.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-blue-400 hover:text-blue-300 font-mono flex items-center gap-0.5"
+                >
+                  <span>Obtener clave gratis</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+              {scraperProvider === 'zenrows' && (
+                <a
+                  href="https://www.zenrows.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-blue-400 hover:text-blue-300 font-mono flex items-center gap-0.5"
+                >
+                  <span>Obtener clave gratis</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+              {scraperProvider === 'scrapingbee' && (
+                <a
+                  href="https://www.scrapingbee.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[11px] text-blue-400 hover:text-blue-300 font-mono flex items-center gap-0.5"
@@ -497,382 +602,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onOpenRecoveryModal 
               {proxyStatus === 'testing' ? 'Verificando...' : 'Probar local'}
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* SUPABASE POSTGRESQL & AUTH HUB */}
-      <div className="rounded-xl bg-[#111827] border border-cyan-500/40 p-6 space-y-6 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#334155]/60 pb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-              <Database className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white uppercase font-mono flex items-center gap-2">
-                <span>Supabase PostgreSQL & Auth Engine</span>
-                <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded font-normal font-sans border border-cyan-500/30">
-                  Fuente Principal
-                </span>
-              </h3>
-              <p className="text-xs text-[#94A3B8]">
-                Base de datos relacional PostgreSQL con Row Level Security (RLS) y aislamiento estricto por usuario.
-              </p>
-            </div>
-          </div>
-          <span className="flex items-center gap-1.5 text-cyan-400 text-xs font-mono font-semibold bg-cyan-500/10 px-2.5 py-1 rounded border border-cyan-500/20 self-start sm:self-auto">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>PROJECT: ekltoasdlhsrqaanvixu</span>
-          </span>
-        </div>
-
-        {/* User Account Info */}
-        <div className="p-4 rounded-lg bg-[#0A0D14] border border-[#334155] space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#1E293B] pb-3">
-            <div>
-              <span className="text-xs text-[#64748B] block font-mono">USUARIO ACTIVO EN SUPABASE</span>
-              <p className="text-sm font-bold text-white font-mono flex items-center gap-2 mt-0.5">
-                {user ? (
-                  <>
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span className="text-emerald-300">{user.email || user.displayName}</span>
-                    <span className="text-[10px] text-[#64748B] font-mono">({user.id.slice(0, 8)}...)</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                    <span className="text-amber-300">Sin sesión iniciada (Modo Local)</span>
-                  </>
-                )}
-              </p>
-            </div>
-
-            {user && (
-              <button
-                onClick={() => signOut()}
-                className="px-3.5 py-1.5 rounded bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-300 text-xs font-mono transition-colors cursor-pointer self-start sm:self-auto"
-              >
-                Cerrar Sesión
-              </button>
-            )}
-          </div>
-
-          {/* If NOT logged in, show Auth Forms */}
-          {!user && (
-            <div className="space-y-4 pt-1">
-              <div className="flex items-center gap-2 border-b border-[#1E293B] pb-2">
-                <button
-                  type="button"
-                  onClick={() => { setAuthMode('login'); setAuthError(null); }}
-                  className={`text-xs font-mono px-3 py-1 rounded transition-colors ${authMode === 'login' ? 'bg-cyan-500 text-black font-bold' : 'text-[#94A3B8] hover:text-white'}`}
-                >
-                  Iniciar Sesión
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setAuthMode('signup'); setAuthError(null); }}
-                  className={`text-xs font-mono px-3 py-1 rounded transition-colors ${authMode === 'signup' ? 'bg-cyan-500 text-black font-bold' : 'text-[#94A3B8] hover:text-white'}`}
-                >
-                  Registrar Cuenta
-                </button>
-              </div>
-
-              {authError && (
-                <div className="p-2.5 rounded bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs">
-                  {authError}
-                </div>
-              )}
-              {authSuccess && (
-                <div className="p-2.5 rounded bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs">
-                  {authSuccess}
-                </div>
-              )}
-
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  setAuthError(null);
-                  setAuthSuccess(null);
-                  setIsAuthLoading(true);
-                  if (authMode === 'login') {
-                    const res = await signInWithEmail(authEmail, authPassword);
-                    if (res.error) setAuthError(res.error);
-                  } else {
-                    const res = await signUpWithEmail(authEmail, authPassword);
-                    if (res.error) setAuthError(res.error);
-                    if (res.message) setAuthSuccess(res.message);
-                  }
-                  setIsAuthLoading(false);
-                }}
-                className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-              >
-                <input
-                  type="email"
-                  required
-                  placeholder="scout@club.com"
-                  value={authEmail}
-                  onChange={(e) => setAuthEmail(e.target.value)}
-                  className="bg-[#111827] border border-[#334155] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
-                />
-                <input
-                  type="password"
-                  required
-                  placeholder="Contraseña (mínimo 6 caracteres)"
-                  value={authPassword}
-                  onChange={(e) => setAuthPassword(e.target.value)}
-                  className="bg-[#111827] border border-[#334155] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono"
-                />
-
-                <div className="sm:col-span-2 flex flex-wrap gap-2 pt-1">
-                  <button
-                    type="submit"
-                    disabled={isAuthLoading}
-                    className="px-4 py-2 rounded bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold font-mono uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    {isAuthLoading ? 'Procesando...' : (authMode === 'login' ? 'Acceder con Email' : 'Crear Cuenta')}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => signInWithGoogle()}
-                    className="px-4 py-2 rounded bg-[#1E293B] hover:bg-[#334155] text-white text-xs font-mono transition-colors flex items-center gap-2 cursor-pointer"
-                  >
-                    <span>Google OAuth</span>
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* RLS Isolation Quick Tester (Usuario A vs Usuario B) */}
-          <div className="pt-3 border-t border-[#1E293B] space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono font-semibold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-                Pruebas de Aislamiento RLS (Multi-Usuario)
-              </span>
-            </div>
-            <p className="text-[11px] text-[#94A3B8]">
-              Cambia instantáneamente entre <strong>Scout A</strong> y <strong>Scout B</strong> para verificar que ningún usuario pueda ver ni modificar los partidos o notas del otro:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={async () => {
-                  await signInAsDemoScout('A');
-                }}
-                className={`px-3 py-1.5 rounded text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  user?.email?.includes('scout_a')
-                    ? 'bg-emerald-500 text-black border border-emerald-400 shadow-md shadow-emerald-500/20'
-                    : 'bg-[#1E293B] hover:bg-[#334155] text-white border border-[#475569]'
-                }`}
-              >
-                <span>👤 Iniciar como Scout A</span>
-                {user?.email?.includes('scout_a') && <span className="text-[10px] bg-black/30 px-1.5 py-0.5 rounded ml-1">ACTIVO</span>}
-              </button>
-
-              <button
-                type="button"
-                onClick={async () => {
-                  await signInAsDemoScout('B');
-                }}
-                className={`px-3 py-1.5 rounded text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  user?.email?.includes('scout_b')
-                    ? 'bg-purple-500 text-white border border-purple-400 shadow-md shadow-purple-500/20'
-                    : 'bg-[#1E293B] hover:bg-[#334155] text-white border border-[#475569]'
-                }`}
-              >
-                <span>👤 Iniciar como Scout B</span>
-                {user?.email?.includes('scout_b') && <span className="text-[10px] bg-black/30 px-1.5 py-0.5 rounded ml-1">ACTIVO</span>}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 1-CLICK NON-DESTRUCTIVE MIGRATION FROM FIREBASE */}
-        <div className="p-4 rounded-lg bg-[#0A0D14] border border-cyan-500/30 space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h4 className="text-xs font-bold text-white uppercase font-mono flex items-center gap-2">
-                <Zap className="w-4 h-4 text-cyan-400" />
-                <span>Migración Segura: Firebase ➔ Supabase</span>
-              </h4>
-              <p className="text-[11px] text-[#94A3B8] mt-0.5">
-                Copia todos los partidos, notas tácticas y dossiers existentes a PostgreSQL en Supabase. <strong>No borra nada de Firebase</strong> (permanece 100% como respaldo).
-              </p>
-            </div>
-
-            <button
-              onClick={async () => {
-                if (!user) {
-                  alert('Debes iniciar sesión con Supabase primero para asociar los datos migrados a tu cuenta.');
-                  return;
-                }
-                setIsMigrating(true);
-                setMigrationResult(null);
-                try {
-                  const res = await migrateFirebaseToSupabase(user.id);
-                  setMigrationResult(res);
-                  await storageService.syncAll();
-                } catch (e: any) {
-                  alert('Error al migrar: ' + e.message);
-                } finally {
-                  setIsMigrating(false);
-                }
-              }}
-              disabled={isMigrating || !user}
-              className="px-4 py-2 rounded bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-black text-xs font-extrabold font-mono uppercase tracking-wider flex items-center justify-center gap-2 shrink-0 cursor-pointer disabled:opacity-50 transition-all shadow-md shadow-cyan-500/20"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isMigrating ? 'animate-spin' : ''}`} />
-              <span>{isMigrating ? 'Migrando datos...' : 'Copiar a Supabase Ahora'}</span>
-            </button>
-          </div>
-
-          {migrationResult && (
-            <div className="p-3 rounded bg-[#111827] border border-cyan-500/40 text-xs font-mono space-y-1">
-              <p className="text-emerald-400 font-bold flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-emerald-400" />
-                <span>Migración completada con éxito:</span>
-              </p>
-              <p className="text-[#94A3B8] pl-5">
-                • Partidos migrados: <strong className="text-white">{migrationResult.reportsMigrated}</strong>
-              </p>
-              <p className="text-[#94A3B8] pl-5">
-                • Dossiers de jugadores: <strong className="text-white">{migrationResult.dossiersMigrated}</strong>
-              </p>
-              <p className="text-cyan-300 pl-5">
-                • Respaldo Firebase: <strong>Intacto y preservado</strong>
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Copy SQL Script for Supabase SQL Editor */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded bg-[#0A0D14] border border-[#334155] text-xs">
-          <div className="flex items-start gap-2.5">
-            <Key className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <p className="text-white font-mono font-bold text-[11px]">
-                Script DDL PostgreSQL & Políticas RLS
-              </p>
-              <p className="text-[#94A3B8] text-[11px]">
-                Tablas <code className="text-cyan-300">matches</code>, <code className="text-cyan-300">teams</code>, <code className="text-cyan-300">players</code>, <code className="text-cyan-300">scout_evaluations</code>, <code className="text-cyan-300">player_dossiers</code> listas para Supabase.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              const sql = `-- DDL & RLS SCRIPT FOR SUPABASE POSTGRESQL (Project: ekltoasdlhsrqaanvixu)
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
-CREATE TABLE IF NOT EXISTS public.teams (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  short_name TEXT,
-  logo_url TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS public.players (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  short_name TEXT,
-  number INTEGER,
-  position TEXT,
-  position_label TEXT,
-  nationality TEXT,
-  avatar_url TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS public.matches (
-  id TEXT PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  url TEXT,
-  competition TEXT NOT NULL,
-  competition_logo TEXT,
-  round_or_phase TEXT,
-  match_date TIMESTAMPTZ,
-  stadium TEXT,
-  referee TEXT,
-  status TEXT DEFAULT 'FINISHED',
-  home_team_id TEXT REFERENCES public.teams(id),
-  away_team_id TEXT REFERENCES public.teams(id),
-  home_score INTEGER DEFAULT 0,
-  away_score INTEGER DEFAULT 0,
-  home_formation TEXT,
-  away_formation TEXT,
-  general_notes TEXT DEFAULT '',
-  full_match_data JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS public.scout_evaluations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  match_id TEXT NOT NULL REFERENCES public.matches(id) ON DELETE CASCADE,
-  player_id TEXT NOT NULL REFERENCES public.players(id) ON DELETE CASCADE,
-  rating NUMERIC(3, 1),
-  rating_level TEXT,
-  comment TEXT DEFAULT '',
-  tags TEXT[] DEFAULT ARRAY[]::TEXT[],
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, match_id, player_id)
-);
-
-CREATE TABLE IF NOT EXISTS public.match_event_notes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  match_id TEXT NOT NULL REFERENCES public.matches(id) ON DELETE CASCADE,
-  event_id TEXT NOT NULL,
-  note TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, match_id, event_id)
-);
-
-CREATE TABLE IF NOT EXISTS public.player_dossiers (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  player_id TEXT NOT NULL REFERENCES public.players(id) ON DELETE CASCADE,
-  player_name TEXT NOT NULL,
-  team_name TEXT,
-  position_label TEXT,
-  overall_rating NUMERIC(3, 1),
-  recommendation TEXT,
-  projected_role TEXT,
-  strengths TEXT,
-  weaknesses TEXT,
-  summary_notes TEXT DEFAULT '',
-  full_data JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, player_id)
-);
-
-ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.scout_evaluations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.match_event_notes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.player_dossiers ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Public team catalogue" ON public.teams FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Public player catalogue" ON public.players FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Matches user isolation" ON public.matches FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Evaluations user isolation" ON public.scout_evaluations FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Event notes user isolation" ON public.match_event_notes FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Player dossiers user isolation" ON public.player_dossiers FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);`;
-              navigator.clipboard.writeText(sql);
-              setCopiedSql(true);
-              setTimeout(() => setCopiedSql(false), 2000);
-            }}
-            className="px-3.5 py-2 rounded bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-cyan-300 font-mono text-xs flex items-center justify-center gap-1.5 shrink-0 transition-colors cursor-pointer"
-          >
-            {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copiedSql ? 'Copiado' : 'Copiar SQL DDL'}</span>
-          </button>
         </div>
       </div>
 
